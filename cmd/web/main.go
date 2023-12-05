@@ -4,25 +4,32 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"time"
+
+	_ "github.com/jackc/pgconn"
+	_ "github.com/jackc/pgx/v4"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 const webPort = "80"
 
 func main() {
 	// connect to the database
-	initDB()
+	db := initDB()
+	db.Ping()
 
 	// create sessions
+	session := initSession()
 
 	// create channels
 
 	// create waitgroup
 
-	// setup the application config
+	// set up the application config
 
 	// set up mail
 
-	// listen for web connection
+	// listen for web connections
 }
 
 func initDB() *sql.DB {
@@ -30,6 +37,7 @@ func initDB() *sql.DB {
 	if conn == nil {
 		log.Panic("can't connect to database")
 	}
+	return conn
 }
 
 func connectToDB() *sql.DB {
@@ -39,6 +47,21 @@ func connectToDB() *sql.DB {
 
 	for {
 		connection, err := openDB(dsn)
+		if err != nil {
+			log.Println("postgres not yet ready...")
+		} else {
+			log.Print("connected to database!")
+			return connection
+		}
+
+		if counts > 10 {
+			return nil
+		}
+
+		log.Print("Backing off for 1 second")
+		time.Sleep(1 * time.Second)
+		counts++
+		continue
 	}
 }
 
@@ -47,4 +70,11 @@ func openDB(dsn string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
