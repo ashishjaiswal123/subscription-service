@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -46,6 +47,26 @@ func main() {
 	// set up mail
 
 	// listen for web connections
+	app.serve()
+}
+
+func (app *Config) serve() {
+	// start http server
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%s", webPort),
+		Handler: app.routes(),
+	}
+
+	log.Println("Before starting web server...")
+
+	// Print error before calling Panicln
+	err := srv.ListenAndServe()
+	if err != nil {
+		log.Println("Error starting web server:", err)
+		app.Infolog.Panicln("Error starting web server:", err)
+	}
+
+	log.Println("After starting web server...")
 }
 
 func initDB() *sql.DB {
@@ -58,13 +79,14 @@ func initDB() *sql.DB {
 
 func connectToDB() *sql.DB {
 	counts := 0
-
-	dsn := os.Getenv("DSN")
+	dsn := "host=localhost port=5432 user=postgres password=password dbname=concurrency sslmode=disable timezone=UTC connect_timeout=5"
+	log.Println("Using DSN:", dsn)
 
 	for {
 		connection, err := openDB(dsn)
 		if err != nil {
 			log.Println("postgres not yet ready...")
+			counts++
 		} else {
 			log.Print("connected to database!")
 			return connection
@@ -76,7 +98,6 @@ func connectToDB() *sql.DB {
 
 		log.Print("Backing off for 1 second")
 		time.Sleep(1 * time.Second)
-		counts++
 		continue
 	}
 }
