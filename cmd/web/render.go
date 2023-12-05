@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
-	"text/template"
 	"time"
 )
 
@@ -25,10 +25,10 @@ type TemplateData struct {
 func (app *Config) render(w http.ResponseWriter, r *http.Request, t string, td *TemplateData) {
 	partials := []string{
 		fmt.Sprintf("%s/base.layout.gohtml", pathToTemplates),
-		fmt.Sprintf("%s/header.layout.gohtml", pathToTemplates),
-		fmt.Sprintf("%s/navbar.layout.gohtml", pathToTemplates),
-		fmt.Sprintf("%s/footer.layout.gohtml", pathToTemplates),
-		fmt.Sprintf("%s/alerts.layout.gohtml", pathToTemplates),
+		fmt.Sprintf("%s/header.partial.gohtml", pathToTemplates),
+		fmt.Sprintf("%s/navbar.partial.gohtml", pathToTemplates),
+		fmt.Sprintf("%s/footer.partial.gohtml", pathToTemplates),
+		fmt.Sprintf("%s/alerts.partial.gohtml", pathToTemplates),
 	}
 
 	var templateSlice []string
@@ -58,8 +58,8 @@ func (app *Config) render(w http.ResponseWriter, r *http.Request, t string, td *
 
 func (app *Config) AddDefaultData(td *TemplateData, r *http.Request) *TemplateData {
 	td.Flash = app.Session.PopString(r.Context(), "flash")
-	td.Flash = app.Session.PopString(r.Context(), "warning")
-	td.Flash = app.Session.PopString(r.Context(), "error")
+	td.Warning = app.Session.PopString(r.Context(), "warning")
+	td.Error = app.Session.PopString(r.Context(), "error")
 	if app.IsAuthenticated(r) {
 		td.Authenticated = true
 		// TODO - get more user information
@@ -70,6 +70,5 @@ func (app *Config) AddDefaultData(td *TemplateData, r *http.Request) *TemplateDa
 }
 
 func (app *Config) IsAuthenticated(r *http.Request) bool {
-	exists := app.Session.Exists(r.Context(), "userID")
-	return exists
+	return app.Session.Exists(r.Context(), "userID")
 }
