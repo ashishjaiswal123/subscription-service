@@ -84,7 +84,8 @@ func initDB() *sql.DB {
 
 func connectToDB() *sql.DB {
 	counts := 0
-	dsn := "host=localhost port=5432 user=postgres password=password dbname=concurrency sslmode=disable timezone=UTC connect_timeout=5"
+	// dsn := "host=localhost port=5432 user=postgres password=password dbname=concurrency sslmode=disable timezone=UTC connect_timeout=5"
+	dsn := os.Getenv("DSN")
 	log.Println("Using DSN:", dsn)
 
 	for {
