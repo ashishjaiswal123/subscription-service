@@ -3,9 +3,10 @@ package data
 import (
 	"context"
 	"errors"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // User is the structure which holds one user from the database.
@@ -77,6 +78,7 @@ func (u *User) GetAll() ([]*User, error) {
 
 // GetByEmail returns one user by email
 func (u *User) GetByEmail(email string) (*User, error) {
+	log.Println("GetByEmail", email)
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 

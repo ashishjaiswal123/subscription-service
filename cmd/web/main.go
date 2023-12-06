@@ -2,11 +2,13 @@ package main
 
 import (
 	"database/sql"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"subscription-service/data"
 	"sync"
 	"syscall"
 	"time"
@@ -44,6 +46,7 @@ func main() {
 		Infolog:  infoLog,
 		ErrorLog: errorLog,
 		Wait:     &wg,
+		Models:   data.New(db),
 	}
 
 	// set up mail
@@ -85,8 +88,11 @@ func initDB() *sql.DB {
 func connectToDB() *sql.DB {
 	counts := 0
 	// dsn := "host=localhost port=5432 user=postgres password=password dbname=concurrency sslmode=disable timezone=UTC connect_timeout=5"
+	os.Setenv("DSN", "host=localhost port=5432 user=postgres password=password dbname=concurrency sslmode=disable timezone=UTC connect_timeout=5")
+	os.Setenv("REDIS", "127.0.0.1:6379")
 	dsn := os.Getenv("DSN")
 	log.Println("Using DSN:", dsn)
+	fmt.Println("Using DSN:", dsn)
 
 	for {
 		connection, err := openDB(dsn)
@@ -123,6 +129,8 @@ func openDB(dsn string) (*sql.DB, error) {
 }
 
 func initSession() *scs.SessionManager {
+	gob.Register(data.User{})
+
 	// set up session
 	session := scs.New()
 	session.Store = redisstore.New(initRedis())
