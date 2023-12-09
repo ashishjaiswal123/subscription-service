@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"subscription-service/data"
 	"testing"
@@ -25,12 +26,12 @@ var pageTests = []struct {
 	{
 		name:               "login page",
 		url:                "/login",
-		expectedStatusCode: http.StatusOK,
+		expectedStatusCode: http.StatusSeeOther,
 		handler:            testApp.LoginPage,
 		expectedHTML:       `<h1 class="mt-5">Login</h1>`,
 	},
 	{
-		name:               "logout page",
+		name:               "logout",
 		url:                "/logout",
 		expectedStatusCode: http.StatusOK,
 		handler:            testApp.LoginPage,
@@ -60,7 +61,7 @@ func Test_Pages(t *testing.T) {
 		e.handler.ServeHTTP(rr, req)
 
 		if rr.Code != http.StatusOK {
-			t.Errorf("%s faild: expected %d, but got %d", e.name, e.expectedStatusCode, rr.Code)
+			t.Errorf("%s failed: expected %d, but got %d", e.name, e.expectedStatusCode, rr.Code)
 		}
 
 		if len(e.expectedHTML) > 0 {
@@ -69,5 +70,31 @@ func Test_Pages(t *testing.T) {
 				t.Errorf("%s failed: expected to find %s, but did not", e.name, e.expectedHTML)
 			}
 		}
+	}
+
+}
+
+func TestConfig_PostLoginPage(t *testing.T) {
+	pathToTemplates = "./templates"
+
+	postedData := url.Values{
+		"email":    {"admin@example.com"},
+		"password": {"abc123abc123abc123abc123"},
+	}
+
+	rr := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/login", strings.NewReader(postedData.Encode()))
+	ctx := getCtx(req)
+	req = req.WithContext(ctx)
+
+	handler := http.HandlerFunc(testApp.PostLoginPage)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusSeeOther {
+		t.Error("wrong code returned")
+	}
+
+	if !testApp.Session.Exists(ctx, "userID") {
+		t.Error("did not find userID in session")
 	}
 }
